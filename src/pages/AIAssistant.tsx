@@ -7,8 +7,13 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { soundManager } from '@/lib/audio';
 
-// Initialize Gemini API
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize Gemini API lazily to prevent crashes if API key is missing
+let ai: GoogleGenAI | null = null;
+try {
+  ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || 'missing_key' });
+} catch (e) {
+  console.error("Failed to initialize Gemini API", e);
+}
 
 type Message = {
   role: 'user' | 'model';
@@ -60,6 +65,7 @@ export function AIAssistant() {
     setIsLoading(true);
 
     try {
+      if (!ai) throw new Error("Gemini API client not initialized. Check API key.");
       const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
         contents: userMessage,
@@ -95,6 +101,7 @@ export function AIAssistant() {
     setCctvAnalysis('');
 
     try {
+      if (!ai) throw new Error("Gemini API client not initialized. Check API key.");
       const base64Data = cctvImage.split(',')[1];
       const mimeType = cctvImage.split(';')[0].split(':')[1];
 
